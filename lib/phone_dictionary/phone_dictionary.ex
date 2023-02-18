@@ -5,72 +5,78 @@ defmodule PhoneDictionary.PhoneDictionary do
   dictionary based on their length
   """
 
-  @word_length_specs %{
-    max: 10,
-    min: 3
+  @word_length_params %{
+    max_length: 10,
+    min_length: 3
   }
 
-  @spec calculate_buckets(%{:max => integer, :min => integer, optional(any) => any}) :: list
-  def calculate_buckets(
-        %{max: max_word_length, min: min_word_length} = word_length_specs \\ @word_length_specs
+  def create_words_bucket(
+        word_length_params \\ @word_length_params,
+        dictionary \\ "assets/docs/Dictionary"
       ) do
-    Enum.reduce(
-      Enum.to_list(min_word_length..max_word_length),
-      [],
-      fn current_length, acc ->
-        acc ++
-          [
-            [current_length] ++
-              calculate_bucket_sizes(
-                word_length_specs |> Map.put(:max, max_word_length - current_length),
-                []
-              )
-          ]
-      end
-    )
+    valid_lengths =
+      word_length_params
+      |> calculate_bucket_sizes
+      |> List.flatten()
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    dictionary
+    |> read_all_words_from_dictionary()
+    |> Stream.map(&String.trim_trailing/1)
+    |> Enum.group_by(&String.length/1)
+    |> Map.filter(fn {size, _any} -> size in valid_lengths end)
+  end
+
+  def calculate_bucket_sizes(
+        %{min_length: min_length} = word_length_params \\ @word_length_params
+      ) do
+    word_length_params
+    |> calculate_buckets
+    |> calculate_deeper(min_length)
+    |> Enum.concat()
+    |> Enum.uniq()
     |> Enum.sort()
   end
 
-  def calculate_bucket_sizes(word_length_specs, ready_list \\ [])
+  def calculate_deeper(input_list, min_length) do
+    input_list
+    |> Enum.filter(fn x -> x != [] end)
+    |> Enum.map(fn [first_element | rest] ->
+      if not is_nil(rest) do
+        calculate_buckets(%{max_length: first_element, min_length: min_length})
+        |> Enum.map(fn split_values ->
+          split_values ++ rest
+        end)
+      else
+        [first_element]
+      end
+    end)
+  end
 
-  def calculate_bucket_sizes(%{max: word_length, min: word_length}, ready_list),
-    do: [ready_list ++ [word_length]]
-
-  def calculate_bucket_sizes(
-        %{max: max_word_length, min: min_word_length} = word_length_specs,
-        ready_list
+  def calculate_buckets(
+        %{max_length: max_length, min_length: min_length} = _word_length_params \\ @word_length_params
       ) do
-    if max_word_length < min_word_length do
-      [ready_list]
+    if max_length < min_length do
+      [[]]
     else
-      Enum.reduce(Enum.to_list(min_word_length..max_word_length), [], fn current_length, acc ->
-        calculate_deep_buckets(word_length_specs, current_length, []) ++ acc
+      min_length..max_length
+      |> Enum.to_list()
+      |> Enum.map(fn word_length ->
+        if word_length == max_length do
+          [word_length]
+        else
+          if word_length >= min_length and max_length - word_length >= min_length do
+            [word_length, max_length - word_length]
+          end
+        end
       end)
+      |> Enum.filter(fn x -> not is_nil(x) end)
     end
   end
 
-  defp calculate_deep_buckets(
-         %{max: max_word_length, min: min_word_length} = _word_length_specs,
-         current_length,
-         ready_list
-       ) do
-    if current_length < min_word_length do
-      ready_list
-    else
-      if max_word_length == current_length do
-        []
-      else
-        if max_word_length - current_length < min_word_length do
-          []
-        else
-          [ready_list ++ [current_length, max_word_length - current_length]] ++
-            calculate_deep_buckets(
-              %{max: max_word_length - current_length, min: min_word_length},
-              current_length,
-              ready_list ++ [current_length]
-            )
-        end
-      end
-    end
+  def read_all_words_from_dictionary(path) do
+    path
+    |> File.stream!()
   end
 end
