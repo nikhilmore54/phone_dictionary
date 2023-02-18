@@ -5,7 +5,7 @@ defmodule PhoneDictionary.PhoneNumberTest do
   doctest PhoneDictionary
 
   test "check the length of phone number" do
-    assert PhoneNumber.validate(2345678933) == {:ok, "2345678933"}
+    assert PhoneNumber.validate(2_345_678_933) == {:ok, "2345678933"}
     assert PhoneNumber.validate("2345678933") == {:ok, "2345678933"}
     assert PhoneNumber.validate("2345678933345") == {:error, :phone_number_too_long}
     assert PhoneNumber.validate("2345678") == {:error, :phone_number_too_short}
