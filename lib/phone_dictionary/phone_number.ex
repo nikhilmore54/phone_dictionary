@@ -21,7 +21,7 @@ defmodule PhoneDictionary.PhoneNumber do
     with phone_number <- to_string(phone_number),
          {:ok, phone_number} <- phone_number |> validate_length,
          {:ok, phone_number} <- phone_number |> validate_digits do
-      {:ok, phone_number}
+      {:ok, to_string(phone_number)}
     else
       error ->
         error

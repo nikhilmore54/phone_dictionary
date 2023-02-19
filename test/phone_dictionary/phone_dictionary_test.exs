@@ -40,8 +40,6 @@ defmodule PhoneDictionary.PhoneDictionaryTest do
                  [3, 4, 3],
                  [10]
                ])
-
-      IO.inspect(PD.create_words_bucket())
     end
   end
 end
