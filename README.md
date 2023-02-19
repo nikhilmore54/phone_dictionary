@@ -47,23 +47,28 @@ Also, words that are 8 and 9 characters long are eliminated immediately as the r
 
 The supplied dictionary is 1.2 MB in size. If the following words are eliminated from the dictionary, it would reduce the memory utilization. However, the side-effect of this approach would be initial setup time would be required. But for a large number if inputs, this would be compensated as the calculation time would be reduced. 
 
+## Performance
 
-**TODO: Add description**
+System was run with Benchee and the following is the output of one such run
 
-## Installation
+```Operating System: macOS
+CPU Information: Apple M1 Pro
+Number of Available Cores: 8
+Available memory: 16 GB
+Elixir 1.14.3
+Erlang 25.2.3
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `phone_dictionary` to your list of dependencies in `mix.exs`:
+Benchmark suite executing with the following configuration:
+warmup: 2 s
+time: 5 s
+memory time: 0 ns
+reduction time: 0 ns
+parallel: 1
+inputs: none specified
+Estimated total run time: 7 s
 
-```elixir
-def deps do
-  [
-    {:phone_dictionary, "~> 0.1.0"}
-  ]
-end
+Benchmarking phone_dictionary ...
+
+Name                       ips        average  deviation         median         99th %
+phone_dictionary        6.46 K      154.69 μs     ±8.93%      153.04 μs      201.22 μs
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/phone_dictionary>.
-
