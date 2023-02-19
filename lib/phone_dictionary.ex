@@ -6,7 +6,11 @@ defmodule PhoneDictionary do
   alias PhoneDictionary.PhoneNumber
 
   def get_words(number) do
-    {:ok, pid} = PD.start_link([])
+    {:ok, pid} =
+      case PD.start_link([]) do
+        {:ok, pid} -> {:ok, pid}
+        {:error, {:already_started, pid}} -> {:ok, pid}
+      end
 
     case PhoneNumber.validate(number) do
       {:ok, valid_number} ->
@@ -18,9 +22,19 @@ defmodule PhoneDictionary do
         usable_number_segments = create_list_of_usable_segments(interim_result)
 
         input_split_numbers
-        |> Enum.filter(fn split_numbers ->
-          split_numbers -- usable_number_segments == []
+        |> Enum.filter(fn split_numbers -> split_numbers -- usable_number_segments == [] end)
+        |> Enum.map(fn raw_numbers -> collate_usable_words(raw_numbers, interim_result) end)
+        |> Enum.map(fn list_of_word_for_combination ->
+          list_of_word_for_combination =
+            if length(list_of_word_for_combination) == 1 do
+              [list_of_word_for_combination ++ []]
+            else
+              list_of_word_for_combination
+            end
+
+          create_cartesian_product(list_of_word_for_combination)
         end)
+        |> post_process()
 
       {:error, error_message} ->
         inspect(error_message)
@@ -58,9 +72,39 @@ defmodule PhoneDictionary do
 
   defp create_list_of_usable_segments(interim_result) do
     interim_result
-    |> Enum.map(fn {key, _value} ->
-      key
-    end)
+    |> Enum.map(fn {key, _value} -> key end)
     |> Enum.uniq()
+  end
+
+  defp collate_usable_words(usable_patterns, interim_result) do
+    usable_patterns
+    |> Enum.map(fn number ->
+      get_mapped_words(number, interim_result)
+    end)
+  end
+
+  defp get_mapped_words(number, interim_result) do
+    Enum.filter(interim_result, fn {key, _word} -> key == number end)
+    |> Enum.map(fn {_key, word} -> word end)
+  end
+
+  defp create_cartesian_product([first_word | [second_word | rest]]) do
+    cartesian_product =
+      for x <- first_word,
+          y <- second_word,
+          do: make_list(x) ++ make_list(y)
+
+    create_cartesian_product([cartesian_product | rest])
+  end
+
+  defp create_cartesian_product(word), do: word
+
+  defp make_list(input) do
+    if is_list(input), do: input, else: [input]
+  end
+
+  defp post_process(input) do
+    input
+    |> Enum.map(fn [element] -> element end)
   end
 end
